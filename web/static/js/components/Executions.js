@@ -236,7 +236,7 @@ export function Executions() {
       </div>
 
       <!-- Table -->
-      <div class="flex-1 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto overflow-x-auto">
         ${loading && executions.length === 0 ? html`
           <div class="p-8 text-center text-wa-secondary text-sm">Carregando...</div>
         ` : executions.length === 0 ? html`

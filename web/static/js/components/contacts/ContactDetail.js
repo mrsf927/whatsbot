@@ -31,9 +31,9 @@ export function ContactDetail({ phone, onBack, messages, info, contact, onAvatar
 
   useEffect(() => { setInput(''); }, [phone]);
 
-  // Auto-focus message input when opening a chat
+  // Auto-focus message input when opening a chat (skip on touch devices to avoid keyboard pop-up)
   useEffect(() => {
-    if (phone && inputRef.current) {
+    if (phone && inputRef.current && !window.matchMedia('(hover: none)').matches) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [phone]);
