@@ -34,6 +34,9 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
   const [imageTranscriptionEnabled, setImageTranscriptionEnabled] = useState(true);
   const [transferAlertEnabled, setTransferAlertEnabled] = useState(true);
   const [transferAlertDuration, setTransferAlertDuration] = useState(5);
+  const [humanTransferNotifyEnabled, setHumanTransferNotifyEnabled] = useState(false);
+  const [humanTransferNotifyTarget, setHumanTransferNotifyTarget] = useState('');
+  const [humanTransferNotifyMessage, setHumanTransferNotifyMessage] = useState('');
   const [maxExecutions, setMaxExecutions] = useState(200);
   const [defaultAiEnabled, setDefaultAiEnabled] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -84,6 +87,9 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
       setImageTranscriptionEnabled(config.image_transcription_enabled ?? true);
       setTransferAlertEnabled(config.transfer_alert_enabled ?? true);
       setTransferAlertDuration(config.transfer_alert_duration ?? 5);
+      setHumanTransferNotifyEnabled(config.human_transfer_notify_enabled ?? false);
+      setHumanTransferNotifyTarget(config.human_transfer_notify_target ?? '');
+      setHumanTransferNotifyMessage(config.human_transfer_notify_message ?? '');
       setMaxExecutions(config.max_executions ?? 200);
       setDefaultAiEnabled(config.default_ai_enabled ?? true);
     }
@@ -152,6 +158,9 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
       image_transcription_enabled: imageTranscriptionEnabled,
       transfer_alert_enabled: transferAlertEnabled,
       transfer_alert_duration: parseInt(transferAlertDuration, 10) || 5,
+      human_transfer_notify_enabled: humanTransferNotifyEnabled,
+      human_transfer_notify_target: humanTransferNotifyTarget.trim(),
+      human_transfer_notify_message: humanTransferNotifyMessage,
       max_executions: parseInt(maxExecutions, 10) || 200,
       default_ai_enabled: defaultAiEnabled,
     };
@@ -424,6 +433,45 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
                 onInput=${(e) => setTransferAlertDuration(e.target.value)}
                 class="w-32 bg-white text-wa-text px-3 py-1.5 rounded-lg text-sm border border-wa-border focus:border-wa-teal focus:outline-none"
               />
+            </div>
+          ` : null}
+        </div>
+
+        <!-- Human Transfer Notification -->
+        <div class="flex flex-col gap-2 p-3 bg-wa-panel rounded-lg border border-wa-border">
+          <label class="flex items-center gap-2 text-sm font-semibold text-wa-text cursor-pointer">
+            <input
+              type="checkbox"
+              checked=${humanTransferNotifyEnabled}
+              onChange=${(e) => setHumanTransferNotifyEnabled(e.target.checked)}
+              class="w-4 h-4 rounded border-wa-border accent-wa-teal"
+            />
+            Notificar contato ao transferir para humano
+          </label>
+          <span class="text-xs text-wa-secondary">Envia uma mensagem WhatsApp para um contato ou grupo quando a IA transfere o atendimento</span>
+          ${humanTransferNotifyEnabled ? html`
+            <div class="flex flex-col gap-3 mt-1">
+              <div>
+                <label class="block text-xs font-medium text-wa-text mb-1">Contato ou grupo para notificar</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 5511999999999 ou ID do grupo"
+                  value=${humanTransferNotifyTarget}
+                  onInput=${(e) => setHumanTransferNotifyTarget(e.target.value)}
+                  class="w-full bg-white text-wa-text px-3 py-1.5 rounded-lg text-sm border border-wa-border focus:border-wa-teal focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-wa-text mb-1">Mensagem de notificação</label>
+                <textarea
+                  rows="3"
+                  placeholder=${"🔔 Solicitação de atendimento humano!\nContato: {name}\nTelefone: {phone}"}
+                  value=${humanTransferNotifyMessage}
+                  onInput=${(e) => setHumanTransferNotifyMessage(e.target.value)}
+                  class="w-full bg-white text-wa-text px-3 py-1.5 rounded-lg text-sm border border-wa-border focus:border-wa-teal focus:outline-none resize-none"
+                />
+                <span class="text-xs text-wa-secondary">Use <code>{name}</code> para o nome e <code>{phone}</code> para o telefone do contato</span>
+              </div>
             </div>
           ` : null}
         </div>

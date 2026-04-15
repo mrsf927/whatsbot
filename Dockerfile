@@ -15,8 +15,10 @@ RUN apt-get update && \
 RUN curl -fsSL "https://github.com/aldinokemal/go-whatsapp-web-multidevice/releases/download/v${GOWA_VERSION}/whatsapp_${GOWA_VERSION}_linux_${TARGETARCH}.zip" \
         -o /tmp/gowa.zip && \
     unzip /tmp/gowa.zip -d /tmp/gowa && \
-    cp /tmp/gowa/linux-${TARGETARCH} /usr/local/bin/gowa && \
+    ls -la /tmp/gowa/ && \
+    find /tmp/gowa -maxdepth 1 -type f \( -name "linux-${TARGETARCH}" -o -name "whatsapp" -o -name "whatsapp_*" \) | head -1 | xargs -I{} cp {} /usr/local/bin/gowa && \
     chmod +x /usr/local/bin/gowa && \
+    /usr/local/bin/gowa --version || true && \
     rm -rf /tmp/gowa /tmp/gowa.zip
 
 WORKDIR /app

@@ -59,6 +59,8 @@ def register_routes(app, deps):
             "max_context_messages", "message_batch_delay",
             "split_messages", "split_message_delay",
             "transfer_alert_enabled", "transfer_alert_duration",
+            "human_transfer_notify_enabled", "human_transfer_notify_target",
+            "human_transfer_notify_message",
             "group_reply_mode", "bot_phone", "bot_name",
             "max_executions", "default_ai_enabled",
         }

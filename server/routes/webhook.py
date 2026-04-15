@@ -236,6 +236,22 @@ def register_routes(app, deps):
                 "tags": list(contact.tags),
             })
 
+            # Send WhatsApp notification if configured
+            notify_enabled = settings.get("human_transfer_notify_enabled", False)
+            notify_target = settings.get("human_transfer_notify_target", "").strip()
+            if notify_enabled and notify_target:
+                contact_name = contact.info.get("name", "").strip() or phone
+                template = settings.get(
+                    "human_transfer_notify_message",
+                    "🔔 Solicitação de atendimento humano!\nContato: {name}\nTelefone: {phone}",
+                )
+                msg = template.replace("{name}", contact_name).replace("{phone}", phone)
+                try:
+                    await asyncio.to_thread(gowa_client.send_message, notify_target, msg)
+                    logger.info("[Transfer] Notification sent to %s for contact %s", notify_target, phone)
+                except Exception as e:
+                    logger.warning("[Transfer] Failed to send notification to %s: %s", notify_target, e)
+
     # Expose broadcast_tool_calls for sandbox route
     deps.broadcast_tool_calls = _broadcast_tool_calls
 

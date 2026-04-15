@@ -50,8 +50,8 @@ def main():
     from agent.handler import AgentHandler
     from server.app import create_app
 
-    port = settings.get("gowa_port", 3000)
-    web_port = settings.get("web_port", 8080)
+    port = int(os.environ.get("GOWA_PORT", settings.get("gowa_port", 3000)))
+    web_port = int(os.environ.get("PORT", os.environ.get("WEB_PORT", settings.get("web_port", 8080))))
 
     webhook_url = f"http://127.0.0.1:{web_port}/api/webhook"
     gowa_manager = GOWAManager(port=port, data_dir=settings.data_dir, webhook_url=webhook_url)

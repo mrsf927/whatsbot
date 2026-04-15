@@ -8,6 +8,17 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+def _pipe_stderr(proc: subprocess.Popen, proc_logger: logging.Logger):
+    """Read GOWA stderr in a background thread and forward to logger."""
+    try:
+        for line in proc.stderr:
+            line = line.rstrip()
+            if line:
+                proc_logger.warning("[GOWA] %s", line)
+    except Exception:
+        pass
+
+
 def _get_gowa_binary() -> Path:
     """Locate the GOWA binary."""
     base = Path(__file__).resolve().parent.parent
@@ -71,11 +82,20 @@ class GOWAManager:
         self._process = subprocess.Popen(
             cmd,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             creationflags=creation_flags,
         )
         self._running = True
         logger.info("GOWA started (pid=%s)", self._process.pid)
+
+        # Forward GOWA stderr to Python logger for diagnostics
+        stderr_thread = threading.Thread(
+            target=_pipe_stderr,
+            args=(self._process, logger),
+            daemon=True,
+            name="gowa-stderr",
+        )
+        stderr_thread.start()
 
         # Start watchdog
         self._watchdog_thread = threading.Thread(
