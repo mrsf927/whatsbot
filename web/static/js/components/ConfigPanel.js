@@ -174,7 +174,7 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
       transfer_alert_duration: parseInt(transferAlertDuration, 10) || 5,
       human_transfer_notify_enabled: humanTransferNotifyEnabled,
       human_transfer_notify_target: humanTransferNotifyTarget.trim(),
-      human_transfer_notify_message: humanTransferNotifyMessage,
+      human_transfer_notify_message: humanTransferNotifyMessage.trim() || '🔔 Solicitação de atendimento humano!\nContato: {name}\nTelefone: {phone}',
       max_executions: parseInt(maxExecutions, 10) || 200,
       default_ai_enabled: defaultAiEnabled,
     };
