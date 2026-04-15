@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import htm from 'htm';
-import { testApiKey, checkForUpdates, performUpdate } from '../services/api.js';
+import { testApiKey, checkForUpdates, performUpdate, getContacts } from '../services/api.js';
 import { ModelSelect } from './ModelSelect.js';
 
 const html = htm.bind(h);
@@ -37,6 +37,10 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
   const [humanTransferNotifyEnabled, setHumanTransferNotifyEnabled] = useState(false);
   const [humanTransferNotifyTarget, setHumanTransferNotifyTarget] = useState('');
   const [humanTransferNotifyMessage, setHumanTransferNotifyMessage] = useState('');
+  const [notifyContactSearch, setNotifyContactSearch] = useState('');
+  const [notifyContactResults, setNotifyContactResults] = useState([]);
+  const [notifyContactOpen, setNotifyContactOpen] = useState(false);
+  const [notifyContactSelected, setNotifyContactSelected] = useState(null);
   const [maxExecutions, setMaxExecutions] = useState(200);
   const [defaultAiEnabled, setDefaultAiEnabled] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -88,8 +92,18 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
       setTransferAlertEnabled(config.transfer_alert_enabled ?? true);
       setTransferAlertDuration(config.transfer_alert_duration ?? 5);
       setHumanTransferNotifyEnabled(config.human_transfer_notify_enabled ?? false);
-      setHumanTransferNotifyTarget(config.human_transfer_notify_target ?? '');
+      const savedTarget = config.human_transfer_notify_target ?? '';
+      setHumanTransferNotifyTarget(savedTarget);
       setHumanTransferNotifyMessage(config.human_transfer_notify_message ?? '');
+      // Restore selected contact display if target is already set
+      if (savedTarget) {
+        getContacts('', false).then(res => {
+          if (res.ok) {
+            const found = (res.data || []).find(c => c.phone === savedTarget);
+            if (found) setNotifyContactSelected(found);
+          }
+        });
+      }
       setMaxExecutions(config.max_executions ?? 200);
       setDefaultAiEnabled(config.default_ai_enabled ?? true);
     }
@@ -451,15 +465,70 @@ export function ConfigPanel({ config, saving, onSave, onNotify }) {
           <span class="text-xs text-wa-secondary">Envia uma mensagem WhatsApp para um contato ou grupo quando a IA transfere o atendimento</span>
           ${humanTransferNotifyEnabled ? html`
             <div class="flex flex-col gap-3 mt-1">
-              <div>
+              <div class="relative">
                 <label class="block text-xs font-medium text-wa-text mb-1">Contato ou grupo para notificar</label>
-                <input
-                  type="text"
-                  placeholder="Ex: 5511999999999 ou ID do grupo"
-                  value=${humanTransferNotifyTarget}
-                  onInput=${(e) => setHumanTransferNotifyTarget(e.target.value)}
-                  class="w-full bg-white text-wa-text px-3 py-1.5 rounded-lg text-sm border border-wa-border focus:border-wa-teal focus:outline-none"
-                />
+                ${notifyContactSelected ? html`
+                  <div class="flex items-center gap-2 bg-white border border-wa-teal rounded-lg px-3 py-1.5">
+                    <div class="flex-1 min-w-0">
+                      <span class="text-sm font-medium text-wa-text block truncate">
+                        ${notifyContactSelected.display_name || notifyContactSelected.phone}
+                      </span>
+                      <span class="text-xs text-wa-secondary">${notifyContactSelected.phone}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick=${() => { setNotifyContactSelected(null); setHumanTransferNotifyTarget(''); setNotifyContactSearch(''); setNotifyContactResults([]); }}
+                      class="text-wa-secondary hover:text-red-500 text-lg leading-none flex-shrink-0"
+                    >×</button>
+                  </div>
+                ` : html`
+                  <input
+                    type="text"
+                    placeholder="Buscar contato pelo nome ou número..."
+                    value=${notifyContactSearch}
+                    onFocus=${async () => {
+                      setNotifyContactOpen(true);
+                      if (!notifyContactResults.length) {
+                        const res = await getContacts('', false);
+                        if (res.ok) setNotifyContactResults(res.data || []);
+                      }
+                    }}
+                    onInput=${async (e) => {
+                      const q = e.target.value;
+                      setNotifyContactSearch(q);
+                      setNotifyContactOpen(true);
+                      const res = await getContacts(q, false);
+                      if (res.ok) setNotifyContactResults(res.data || []);
+                    }}
+                    onBlur=${() => setTimeout(() => setNotifyContactOpen(false), 150)}
+                    class="w-full bg-white text-wa-text px-3 py-1.5 rounded-lg text-sm border border-wa-border focus:border-wa-teal focus:outline-none"
+                  />
+                  ${notifyContactOpen && notifyContactResults.length ? html`
+                    <div class="absolute z-50 w-full mt-1 bg-white border border-wa-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      ${notifyContactResults.map(c => html`
+                        <button
+                          type="button"
+                          key=${c.phone}
+                          onMouseDown=${() => {
+                            setNotifyContactSelected(c);
+                            setHumanTransferNotifyTarget(c.phone);
+                            setNotifyContactSearch('');
+                            setNotifyContactOpen(false);
+                          }}
+                          class="w-full text-left px-3 py-2 hover:bg-wa-panel flex items-center gap-2 border-b border-wa-border last:border-0"
+                        >
+                          <div class="flex-1 min-w-0">
+                            <span class="text-sm font-medium text-wa-text block truncate">
+                              ${c.display_name || c.phone}
+                            </span>
+                            <span class="text-xs text-wa-secondary">${c.phone}</span>
+                          </div>
+                          ${c.is_group ? html`<span class="text-xs bg-wa-panel border border-wa-border text-wa-secondary px-1.5 py-0.5 rounded">grupo</span>` : null}
+                        </button>
+                      `)}
+                    </div>
+                  ` : null}
+                `}
               </div>
               <div>
                 <label class="block text-xs font-medium text-wa-text mb-1">Mensagem de notificação</label>
